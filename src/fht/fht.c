@@ -9,8 +9,8 @@
 // Lookup tables for the cas values that an n-point FHT calculation will use
 // Indexes are on the log(2) scale and hold the cas values for a 2^i point FHT
 // e.g. lt_sin_vals[5] will return a pointer to the cas values for a (2^5) point FHT
-float **lt_sin_vals;
-float **lt_cos_vals;
+static float **lt_sin_vals;
+static float **lt_cos_vals;
 
 void lt_init(void)
 {
@@ -60,7 +60,6 @@ void fht(float *data, uint16_t n)
     float even[half_n];
     float odd[half_n];
 
-    printf("n: %d\n", n);
     if (n == 1) return;
 
     // Signal time decomposition (separating even and odd indexes)
@@ -89,7 +88,7 @@ void fht(float *data, uint16_t n)
     }
 }
 
-int main(void)
+void fht_test(void)
 {
     int i;
     float seq[4] = {3.2, 2.5, 7, 4.8};
@@ -111,6 +110,4 @@ int main(void)
         printf("%f ", seq[i]);
     }
     printf("\n");
-
-    return 0;
 }
