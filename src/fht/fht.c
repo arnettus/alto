@@ -7,7 +7,7 @@
 #define FHT_SIZE_LOG2   log(FHT_SIZE)/log(2)
 
 // Lookup tables for the cas values that an n-point FHT calculation will use
-// Indexes are on the log(2) scale and holds the cas values for a 2^i point FHT
+// Indexes are on the log(2) scale and hold the cas values for a 2^i point FHT
 // e.g. lt_sin_vals[5] will return a pointer to the cas values for a (2^5) point FHT
 float **lt_sin_vals;
 float **lt_cos_vals;
@@ -22,8 +22,8 @@ void lt_init(void)
     // First loop allocates memory; an n-point FHT uses n/2 distinct cas values
     for (i = 1; i <= FHT_SIZE_LOG2; i++)
     {
-        int distinct_vals = pow(2, i) / 2;
-        float cas_param = 2 * M_PI / distinct_vals * 2;
+        int distinct_vals = (int)(pow(2, i)) >> 1;
+        float cas_param = M_PI / distinct_vals;
 
         lt_sin_vals[i] = malloc(sizeof(float) * distinct_vals);
         lt_cos_vals[i] = malloc(sizeof(float) * distinct_vals);
@@ -56,10 +56,11 @@ void fht(float *data, uint16_t n)
 {
     int i, lt_idx;
     int half_n = n >> 1;
-    float tw_sin, tw_cos;
+    float tw_factor;
     float even[half_n];
     float odd[half_n];
 
+    printf("n: %d\n", n);
     if (n == 1) return;
 
     // Signal time decomposition (separating even and odd indexes)
@@ -73,41 +74,43 @@ void fht(float *data, uint16_t n)
 
     lt_idx = log(n) / log(2);
 
-    // Zero frequencies
-    tw_sin = lt_sin(lt_idx, 0);
-    tw_cos = lt_cos(lt_idx, 0);
-    data[0] = even[0] + tw_cos*odd[0] + tw_sin*odd[0];
+    // Zero and Nyquist frequency calculations
+    tw_factor = odd[0] * ((lt_cos(lt_idx, 0) + lt_sin(lt_idx, 0)));
+    data[0] = even[0] + tw_factor;
+    data[half_n] = even[0] - tw_factor;
 
     // Main double butterfly calculations
     for (i = 1; i < half_n; i++)
     {
-        // Retrieve twiddle values from the lookup tables
-        tw_sin = lt_sin(lt_idx, i);
-        tw_cos = lt_cos(lt_idx, i);
-
-        data[i] = even[i] + tw_cos*odd[i] + tw_sin*odd[i];
-        data[i + half_n] = even[i] - tw_cos*odd[i] + tw_sin*odd[i];
+        // Find the twiddle factor using the lookup tables
+        tw_factor = (lt_cos(lt_idx, i) * odd[i]) + (lt_sin(lt_idx, i) * odd[half_n - i]);
+        data[i] = even[i] + tw_factor;
+        data[i + half_n] = even[i] - tw_factor;
     }
-
-    // Nyquist frequencies
-    tw_sin = lt_sin(lt_idx, 0);
-    tw_cos = lt_cos(lt_idx, 0);
-    data[half_n] = even[0] - tw_cos*odd[half_n] - tw_sin*odd[half_n];
 }
 
 int main(void)
 {
     int i;
-    float seq[4] = {1, 2, 7, 4};
+    float seq[4] = {3.2, 2.5, 7, 4.8};
+
+    printf("Input: ");
+    for (i = 0; i < 4; i++)
+    {
+        printf("%f ", seq[i]);
+    }
+    printf("\n");
 
     lt_init();
 
     fht(seq, 4);
 
+    printf("Output: ");
     for (i = 0; i < 4; i++)
     {
-        printf("%f\n", seq[i]);
+        printf("%f ", seq[i]);
     }
+    printf("\n");
 
     return 0;
 }
