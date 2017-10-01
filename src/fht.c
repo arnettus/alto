@@ -6,9 +6,9 @@
 #define FHT_SIZE        256
 #define FHT_SIZE_LOG2   log(FHT_SIZE)/log(2)
 
-// Lookup tables for the cas values that an n-point FHT calculation will use
+// Lookup tables for the twiddle factor cas values that an n-point FHT calculation would use
 // Indexes are on the log(2) scale and hold the cas values for a 2^i point FHT
-// e.g. lt_sin_vals[5] will return a pointer to the cas values for a (2^5) point FHT
+// e.g. lt_sin_vals[5] will return a pointer to the twiddle cas values for a (2^5) point FHT
 static float **lt_sin_vals;
 static float **lt_cos_vals;
 
@@ -37,7 +37,7 @@ void lt_init(void)
     }
 }
 
-// Fetch from the cas lookup tables
+// Fetch from the twiddle factor cas lookup tables
 // e.g. lt_sin(3, 0) will return sin(0 * (2PI / (2^3)))
 float lt_sin(int lt_idx, int lt_val)
 {
@@ -51,7 +51,7 @@ float lt_cos(int lt_idx, int lt_val)
 
 // FHT transform function for floats (4 bytes)
 // @data: the data array to transform
-// @size: number of data points in the <data> array
+// @n: number of data points in the <data> array
 void fht(float *data, uint16_t n)
 {
     int i, lt_idx;
