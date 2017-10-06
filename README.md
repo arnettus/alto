@@ -18,6 +18,3 @@
 ### Done-ish:
 - FHT implementation
 - Zero-length encoding
-
-
-
